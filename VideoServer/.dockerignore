@@ -1,0 +1,9 @@
+# Ignore Dockerfile changes
+Dockerfile
+
+# Common files to ignore
+.gradle/
+build/
+*.class
+*.jar
+!gradle-wrapper.jar 

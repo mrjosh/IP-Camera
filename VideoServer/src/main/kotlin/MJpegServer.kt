@@ -42,7 +42,6 @@ class MJpegServer(private val viewerListener: ViewerConnectionListener) {
         val onFrameAvailable = object: CameraServer.OnFrameAvailable {
             override fun onAvailable(frame: ByteArray) {
                 try {
-
                     val boundary = "--frame\r\n"
                     client.getOutputStream().write(boundary.toByteArray())
                     client.getOutputStream().write("Content-Type: image/jpeg\r\n".toByteArray())
@@ -50,9 +49,6 @@ class MJpegServer(private val viewerListener: ViewerConnectionListener) {
                     client.getOutputStream().write(frame)
                     client.getOutputStream().write("\r\n".toByteArray())
                     client.getOutputStream().flush()
-
-                    println("Frame sent to MJPEG client")
-
                 } catch (exception: Exception) {
                     println("Failed to send video frame to MJPEG client")
                     onDisconnect(client)

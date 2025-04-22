@@ -30,8 +30,10 @@ class CameraServer {
     @Volatile
     private var deviceConnected = false
 
-    fun start() {
+    @Volatile
+    private var lastDeviceStatus = false
 
+    fun start() {
         cancelFrameDelegation = true
 
         while (isDelegatingFrames) {
@@ -45,15 +47,12 @@ class CameraServer {
 
         val thread = Thread() {
             println("Camera server: Starting camera server")
-
             println("Camera server: Waiting for clients...")
             val client = server.accept()
             deviceConnected = true
             val connectionTime = System.currentTimeMillis()
 
             println("CameraServer: Client connected")
-            val timestamp = System.currentTimeMillis()
-            println("Connected at: $timestamp")
 
             val reader = DataInputStream(client.getInputStream())
 
@@ -64,18 +63,13 @@ class CameraServer {
                 try {
                     start = System.currentTimeMillis()
                     length = reader.readInt()
-
                     queue.add(reader.readNBytes(length))
-
-                    println("Elapsed: ${System.currentTimeMillis() - start}")
-
                 } catch (exception: IOException) {
                     start()
                     deviceConnected = false
                     exception.printStackTrace()
                     return@Thread
                 }
-
             }
         }
         thread.start()
@@ -91,7 +85,6 @@ class CameraServer {
 
     private fun createFrameDelegatorThread() : Thread {
         val runnable = Runnable {
-
             isDelegatingFrames = true
 
             while (!cancelFrameDelegation) {
@@ -104,16 +97,23 @@ class CameraServer {
                         iterator.forEach { listener ->
                             listener.onAvailable(deviceOfflineImage)
                         }
-                        println("Device offline, sending \"Device offline image\"")
+                        if (lastDeviceStatus != deviceConnected) {
+                            println("Device offline, sending \"Device offline image\"")
+                            lastDeviceStatus = deviceConnected
+                        }
                         Thread.sleep(1000 / 24)
                     }
                     continue
                 }
 
+                if (lastDeviceStatus != deviceConnected) {
+                    println("Device connected, receiving frames")
+                    lastDeviceStatus = deviceConnected
+                }
+
                 iterator.forEach { listener ->
                     listener.onAvailable(frame)
                 }
-                println("Queue size: ${queue.size}")
             }
 
             isDelegatingFrames = false
@@ -124,20 +124,14 @@ class CameraServer {
 
     private fun saveToFile(frame: Frame, timestamp: Long) {
         val file = File("$timestamp.txt")
-
         file.createNewFile()
-
         var existingLines = file.readText()
-
         if (existingLines.isNotEmpty()) {
             existingLines += "|\n"
         }
-
         frame.data.forEach {
             existingLines += it.toString() + "\n"
         }
-
         file.writeText(existingLines)
     }
-
 }

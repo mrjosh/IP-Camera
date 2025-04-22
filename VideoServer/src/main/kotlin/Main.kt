@@ -1,18 +1,5 @@
-fun main(args: Array<String>) {
-
+fun main() {
     val cameraServer = CameraServer()
-
-    val viewerServer = ViewerWebSocketServer(object : ViewerWebSocketServer.Listener {
-        override fun onConnection(listener: CameraServer.OnFrameAvailable) {
-            println("Connection")
-            cameraServer.addListener(listener)
-        }
-
-        override fun onDisconnection(listener: CameraServer.OnFrameAvailable) {
-            println("Disconnection")
-            cameraServer.removeListener(listener)
-        }
-    })
 
     val mjpegServer = MJpegServer(object: ViewerConnectionListener {
         override fun onConnect(onFrameAvailable: CameraServer.OnFrameAvailable) {
@@ -24,7 +11,6 @@ fun main(args: Array<String>) {
         }
     })
 
-    viewerServer.start()
-    mjpegServer.start()
     cameraServer.start()
+    mjpegServer.start()
 }
